@@ -97,7 +97,7 @@ bool solveSudoku9x9(int arr[9][9], int row, int col)
 }
 
 
-int main(int argc, char** argv)
+int main()
 {
 	int board[9][9] = {
 		{5,3,0,0,7,0,0,0,0},
