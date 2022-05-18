@@ -1,98 +1,131 @@
 #include <iostream>
-#include <cstdio>
-#include <cstring>
-#include <cstdlib>
+#include <vector>
 using namespace std;
-#define empty 0
-#define N 9
-bool isGridSafe(int grid[N][N], int row, int col, int num);
-bool isEmptyLocation(int grid[N][N], int &row, int &col);
-/* assign values to all the zero (not assigned) values for Sudoku solution
- */
-bool SolveSudoku(int grid[N][N])
-{
-    int row, col;
-    if (!isEmptyLocation(grid, row, col))
-       return true;
-    for (int num = 1; num <= 9; num++)
-    {
-        if (isGridSafe(grid, row, col, num))
-        {
-            grid[row][col] = num;
-            if (SolveSudoku(grid))
-                return true;
-            grid[row][col] = empty;
-        }
-    }
-    return false;
+
+
+void printSudoku9x9(int arr[9][9]) {
+	cout << "-------------------------" << endl;
+	for (int y = 0; y < 9; y++) {
+		for (int x = 0; x < 9; x++)
+			cout << arr[y][x] << " ";
+		cout << endl;
+	}
+	cout << "-------------------------" << endl;
+
 }
-/* Check for entries that don't have a value. */
-bool isEmptyLocation(int grid[N][N], int &row, int &col)
+
+bool canPlace9x9(int arr[9][9], int row, int col, int n)
 {
-    for (row = 0; row < N; row++)
-        for (col = 0; col < N; col++)
-            if (grid[row][col] == empty)
-                return true;
-    return false;
+	if (arr[row][col] != 0) return false;
+	bool status = true;
+	int gridx = (col / 3) * 3;
+	int gridy = (row / 3) * 3;
+	for (int i = 0; i < 9; i++) {
+		if (arr[row][i] == n) { status = false; break; }
+		if (arr[i][col] == n) { status = false; break; }
+		if (arr[gridy + i / 3][gridx + i % 3] == n) { status = false; break; }
+	}
+	return status;
 }
-/* Returns whether the assigned entry n in the particular row matches
-   the given number num. */
-bool UsedInRow(int grid[N][N], int prow, int number)
+
+void nextEmpty(int arr[9][9], int row, int col, int& rowNext, int& colNext)
 {
-    for (int col = 0; col < N; col++)
-        if (grid[prow][col] == number)
-            return true;
-    return false;
+
+	int indexNext = 9 * 9 + 1;
+	for (int i = row * 9 + col + 1; i < 9 * 9; i++) {
+		if (arr[i / 9][i % 9] == 0) {
+
+			indexNext = i;
+			break;
+		}
+	}
+	rowNext = indexNext / 9;
+	colNext = indexNext % 9;
+	//cout << row << "," << col << "|" << rowNext << "," << colNext << endl;
 }
-/* Returns true if the number num matches any number in the column */
-bool UsedInCol(int grid[N][N], int pcol, int number)
-{
-    for (int row = 0; row < N; row++)
-        if (grid[row][pcol] == number)
-            return true;
-  else 
-     return false;}
-//Check if the entry used already in the grid box
-bool UsedInBox(int grid[N][N], int boxBeginRow, int boxBeginCol, int number)
-{
-    bool tf = false;
-    for (int row = 0; row < 3; row++)
-        for (int col = 0; col < 3; col++)
-            if (grid[row+boxBeginRow][col+boxBeginCol] == number)
-                tf = true;
-    return tf;
+
+void copyArray(int arr[9][9], int arrCpy[9][9]) {
+	for (int y = 0; y < 9; y++)
+		for (int x = 0; x < 9; x++)
+			arrCpy[y][x] = arr[y][x];
 }
-/* Checks if num can be assigned to a given prow,pcol location. */
-bool isGridSafe(int grid[N][N], int prow, int pcol, int number)
-{
-    return !UsedInRow(grid, prow, number) && !UsedInCol(grid, pcol, number) &&
-           !UsedInBox(grid, prow - prow % 3 , pcol - pcol % 3, number);
+std::vector<int> findPlaceables(int arr[9][9], int row, int col) {
+	vector<int> placebles = {};
+	for (int n = 1; n <= 9; n++)
+		if (canPlace9x9(arr, row, col, n)) placebles.push_back(n);
+	return placebles;
 }
-/* print result  */
-void printResult(int finalgrid[N][N])
+
+
+bool solveSudoku9x9(int arr[9][9], int row, int col)
 {
-    for (int row = 0; row < N; row++)
-    {
-        for (int col = 0; col < N; col++)
-            cout<< finalgrid[row][col]<<"  ";
-        cout<<endl;
-    }
+	//system("cls");
+	//printSudoku9x9(arr);
+
+	if (row > 8) return true;
+	if (arr[row][col] != 0) {
+		int rowNext, colNext;
+		nextEmpty(arr, row, col, rowNext, colNext);
+		return solveSudoku9x9(arr, rowNext, colNext);
+	}
+
+	std::vector<int> placebles = findPlaceables(arr, row, col);
+
+	if (placebles.size() == 0) {
+		
+		return false; 
+	
+	};
+
+	bool status = false;
+	for (int i = 0; i < placebles.size(); i++) {
+		int n = placebles[i];
+		int arrCpy[9][9];
+		copyArray(arr, arrCpy);
+		//cout << "(" << row << "," << col << ") =>" << n << endl;
+		arrCpy[row][col] = n;
+		int rowNext = row;
+		int colNext = col;
+		nextEmpty(arrCpy, row, col, rowNext, colNext);
+		if (solveSudoku9x9(arrCpy, rowNext, colNext)) {
+			copyArray(arrCpy, arr);
+			status = true;
+			break;
+		}
+	}
+	return status;
 }
-/* Main */
-int main()
+
+
+int main(int argc, char** argv)
 {
-    int grid[N][N] = {{0, 0, 0, 0, 0, 0, 0, 0, 0},
-                      {0, 0, 0, 0, 0, 3, 0, 8, 5},
-                      {0, 0, 1, 0, 2, 0, 0, 0, 0},
-                      {0, 0, 0, 5, 0, 7, 0, 0, 0},
-                      {0, 0, 4, 0, 0, 0, 1, 0, 0},
-                      {0, 9, 0, 0, 0, 0, 0, 0, 0},
-                      {5, 0, 0, 0, 0, 0, 0, 7, 3},
-                      {0, 0, 2, 0, 1, 0, 0, 0, 0},
-                      {0, 0, 0, 0, 4, 0, 0, 0, 9}}; 
-if (SolveSudoku(grid) == true)
-          printResult(grid);
-    else
-        cout<<"No solution found"<<endl;
-    return 0;
+	int board[9][9] = {
+		{5,3,0,0,7,0,0,0,0},
+		{6,0,0,1,9,5,0,0,0},
+		{0,9,8,0,0,0,0,6,0},
+		{8,0,0,0,6,0,0,0,3},
+		{4,0,0,8,0,3,0,0,1},
+		{7,0,0,0,2,0,0,0,6},
+		{0,6,0,0,0,0,2,8,0},
+		{0,0,0,4,1,9,0,0,5},
+		{0,0,0,0,8,0,0,7,9}
+	};
+	int board2[9][9] = {
+		{8,0,0,0,0,0,0,0,0},
+		{0,0,3,6,0,0,0,0,0},
+		{0,7,0,0,9,0,2,0,0},
+		{0,5,0,0,0,7,0,0,0},
+		{0,0,0,0,4,5,7,0,0},
+		{0,0,0,1,0,0,0,3,0},
+		{0,0,1,0,0,0,0,6,8},
+		{0,0,8,5,0,0,0,1,0},
+		{0,9,0,0,0,0,4,0,0}
+	};
+	
+	if (solveSudoku9x9(board, 0, 0)) cout << "successfully solved board!" << std::endl;
+	printSudoku9x9(board);
+	if (solveSudoku9x9(board2, 0, 0)) cout << "successfully solved board 2!" << std::endl;
+	printSudoku9x9(board2);
+
+	return 0;
 }
